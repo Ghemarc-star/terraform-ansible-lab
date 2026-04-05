@@ -9,7 +9,9 @@ terraform {
   }
 }
 
-# WALA NG provider "google" BLOCK
+provider "kind" {
+  # No configuration needed
+}
 
 resource "kind_cluster" "local" {
   name = "local-cluster"
