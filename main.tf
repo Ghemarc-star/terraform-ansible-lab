@@ -9,7 +9,7 @@ terraform {
   }
 }
 
-# WALA NG provider "google" BLOCK DITO
+# WALA NG provider "google" BLOCK
 
 resource "kind_cluster" "local" {
   name = "local-cluster"
