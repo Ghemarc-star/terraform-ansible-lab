@@ -1,4 +1,4 @@
-﻿# main.tf
+# main.tf
 terraform {
   required_providers {
     kind = {
@@ -7,6 +7,8 @@ terraform {
     }
   }
 }
+
+# Alisin ang Google provider block
 
 resource "kind_cluster" "local" {
   name = "local-cluster"
