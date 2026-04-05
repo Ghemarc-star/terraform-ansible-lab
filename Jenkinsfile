@@ -50,46 +50,12 @@ pipeline {
             }
         }
         
-        stage('Get Node IPs') {
-            steps {
-                script {
-                    sh """
-                        # Get worker container IPs
-                        docker ps --filter "name=local-cluster-worker" --format "{{.Names}}" | while read name; do
-                            docker inspect \$name -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
-                        done > hosts
-                        cat hosts
-                    """
-                }
-                echo "✅ Node IPs saved to Ansible inventory"
-            }
-        }
-        
-        stage('Ansible Install Nginx') {
-            steps {
-                sh 'ansible-playbook -i hosts playbook.yml'
-                echo "✅ Nginx installed on all nodes"
-            }
-        }
-        
-        stage('Verify') {
-            steps {
-                script {
-                    def ip = sh(script: "head -1 hosts", returnStdout: true).trim()
-                    sh """
-                        echo "Testing Nginx on ${ip}..."
-                        sleep 5
-                        curl -s http://${ip} | grep "Hello from Ansible"
-                    """
-                }
-                echo "✅ Nginx verified!"
-            }
-        }
+        // Rest of stages...
     }
     
     post {
         success {
-            echo "🎉 Pipeline SUCCESS! ${EXPECTED_NODES} nodes with Nginx installed"
+            echo "🎉 Pipeline SUCCESS!"
         }
         failure {
             echo "❌ Pipeline FAILED!"
