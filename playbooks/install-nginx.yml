@@ -1,6 +1,7 @@
-﻿---
-- name: Install and configure Nginx
-  hosts: all
+﻿# playbook.yml
+---
+- name: Install Nginx on Kind nodes
+  hosts: workers
   become: yes
   
   tasks:
@@ -24,8 +25,9 @@
         content: |
           <html>
             <body>
-              <h1>Hello from Ansible!</h1>
-              <p>Deployed on {{ ansible_date_time.date }}</p>
+              <h1>Hello from Ansible on Kind!</h1>
+              <p>Deployed by Ansible on {{ ansible_date_time.date }}</p>
+              <p>Node count: {{ node_count }}</p>
             </body>
           </html>
         dest: /var/www/html/index.html

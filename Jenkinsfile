@@ -3,10 +3,7 @@ pipeline {
     
     environment {
         DOCKER_HOST = "tcp://docker-dind:2375"
-        GOOGLE_APPLICATION_CREDENTIALS = "/var/jenkins_home/gcp-creds.json"
-        PROJECT_ID = 'project-f78241dc-4480-4159-8d6'
-        REGION = 'us-central1'
-        PATH = "/google-cloud-sdk/bin:/usr/local/bin:/usr/bin:/bin:${env.PATH}"
+        EXPECTED_NODES = '3'
     }
     
     stages {
@@ -34,26 +31,22 @@ pipeline {
         stage('Check Node Count') {
             steps {
                 script {
-                    sh 'echo "var.initial_node_count" | terraform console > node_count.txt'
+                    sh 'echo "var.node_count" | terraform console > node_count.txt'
                     def nodeCount = readFile('node_count.txt').trim()
                     echo "Detected node_count = ${nodeCount}"
                     
-                    if (nodeCount != "3") {
-                        error("❌ Node count is ${nodeCount}, expected 3")
+                    if (nodeCount != EXPECTED_NODES) {
+                        error("❌ Node count is ${nodeCount}, expected ${EXPECTED_NODES}")
                     }
-                    echo "✅ Node count is correct (3)"
+                    echo "✅ Node count is correct (${EXPECTED_NODES})"
                 }
             }
         }
         
         stage('Terraform Apply') {
             steps {
-                sh """
-                    terraform apply -auto-approve \
-                        -var="project_id=${PROJECT_ID}" \
-                        -var="region=${REGION}"
-                """
-                echo "✅ GKE cluster created"
+                sh 'terraform apply -auto-approve'
+                echo "✅ Kind cluster created"
             }
         }
         
@@ -61,21 +54,21 @@ pipeline {
             steps {
                 script {
                     sh """
-                        gcloud container clusters get-credentials main-cluster \
-                            --region ${REGION} \
-                            --project ${PROJECT_ID}
-                        kubectl get nodes -o jsonpath='{.items[*].status.addresses[?(@.type=="ExternalIP")].address}' | tr ' ' '\n' > hosts
+                        # Get worker container IPs
+                        docker ps --filter "name=local-cluster-worker" --format "{{.Names}}" | while read name; do
+                            docker inspect \$name -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'
+                        done > hosts
                         cat hosts
                     """
                 }
-                echo "✅ Node IPs saved"
+                echo "✅ Node IPs saved to Ansible inventory"
             }
         }
         
         stage('Ansible Install Nginx') {
             steps {
-                sh 'ansible-playbook -i hosts playbooks/install-nginx.yml'
-                echo "✅ Nginx installed"
+                sh 'ansible-playbook -i hosts playbook.yml'
+                echo "✅ Nginx installed on all nodes"
             }
         }
         
@@ -85,6 +78,7 @@ pipeline {
                     def ip = sh(script: "head -1 hosts", returnStdout: true).trim()
                     sh """
                         echo "Testing Nginx on ${ip}..."
+                        sleep 5
                         curl -s http://${ip} | grep "Hello from Ansible"
                     """
                 }
@@ -95,7 +89,7 @@ pipeline {
     
     post {
         success {
-            echo "🎉 Pipeline SUCCESS! 3 nodes with Nginx installed"
+            echo "🎉 Pipeline SUCCESS! ${EXPECTED_NODES} nodes with Nginx installed"
         }
         failure {
             echo "❌ Pipeline FAILED!"
