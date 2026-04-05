@@ -1,4 +1,5 @@
-# main.tf
+# main.tf - LOCAL KIND CLUSTER ONLY
+
 terraform {
   required_providers {
     kind = {
@@ -8,7 +9,7 @@ terraform {
   }
 }
 
-# Alisin ang Google provider block
+# WALA NG provider "google" BLOCK DITO
 
 resource "kind_cluster" "local" {
   name = "local-cluster"
