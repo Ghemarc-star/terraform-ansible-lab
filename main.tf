@@ -27,7 +27,7 @@ resource "google_compute_subnetwork" "main_subnet" {
 resource "google_container_cluster" "main_cluster" {
   name               = "main-cluster"
   location           = var.region
-  initial_node_count = 3
+  initial_node_count = var.initial_node_count
   
   node_config {
     machine_type = "e2-small"
