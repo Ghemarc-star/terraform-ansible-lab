@@ -10,7 +10,7 @@ terraform {
 }
 
 provider "kind" {
-  # No configuration needed
+  # Use the same Docker host as Jenkins
 }
 
 resource "kind_cluster" "local" {
